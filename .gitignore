@@ -1,0 +1,12 @@
+# Build artifacts - phat hanh qua GitHub Releases, khong commit
+dist/
+
+# Du lieu tool sinh ra khi chay
+SteamFix-data/
+logs/
+dns-backup.json
+*.old_*
+
+# Tam
+_stage/
+*.tmp
