@@ -10,7 +10,11 @@ if (-not (Test-Path -LiteralPath $src)) { throw "Thieu file nguon: $src" }
 if (Test-Path $dist) { Remove-Item -LiteralPath $dist -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
+$docs = @('README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md')
+
 $code  = Get-Content -LiteralPath $src -Raw -Encoding UTF8
+# Ghi de so phien ban trong script bang -Version de ban phat hanh tu bao dung version.
+$code  = [regex]::Replace($code, "\`$ScriptVersion = '[^']*'", "`$ScriptVersion = '$Version'")
 $bytes = [System.Text.Encoding]::UTF8.GetBytes($code)
 $b64   = [Convert]::ToBase64String($bytes)
 
@@ -46,16 +50,42 @@ for ($i = 0; $i -lt $b64.Length; $i += 76) {
 }
 Set-Content -LiteralPath $bat -Value $lines -Encoding ASCII
 
-# ---------- 2. Zip phat hanh + checksum ----------
-$hash = (Get-FileHash -LiteralPath $bat -Algorithm SHA256).Hash
-$sum  = Join-Path $dist 'SHA256.txt'
-Set-Content -LiteralPath $sum -Value ("{0} *{1}" -f $hash, (Split-Path $bat -Leaf)) -Encoding ASCII
+# ---------- 2. Ban "plain": script doc duoc, khong base64 ----------
+# Dung khi nguoi dung muon doc code truoc khi chay, va it bi AV soi hon.
+$plainDir = Join-Path $dist '_plain'
+New-Item -ItemType Directory -Force -Path $plainDir | Out-Null
+Set-Content -LiteralPath (Join-Path $plainDir 'SteamFix.ps1') -Value $code -Encoding UTF8
 
+$launcher = @'
+@echo off
+title SteamFix {VERSION}
+setlocal
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0SteamFix.ps1" %*
+endlocal & exit /b %ERRORLEVEL%
+'@.Replace('{VERSION}', $Version)
+Set-Content -LiteralPath (Join-Path $plainDir 'Run-SteamFix.bat') -Value ($launcher -split "`r?`n") -Encoding ASCII
+foreach ($f in $docs) {
+    $p = Join-Path $root $f
+    if (Test-Path -LiteralPath $p) { Copy-Item -LiteralPath $p -Destination $plainDir }
+}
+$plainZip = Join-Path $dist ("SteamFix-{0}-plain.zip" -f $Version)
+Compress-Archive -Path (Join-Path $plainDir '*') -DestinationPath $plainZip -Force
+Remove-Item -LiteralPath $plainDir -Recurse -Force
+
+# ---------- 3. Checksum ----------
+$sum = Join-Path $dist 'SHA256.txt'
+$sumLines = @(
+    ("{0} *{1}" -f (Get-FileHash -LiteralPath $bat -Algorithm SHA256).Hash, (Split-Path $bat -Leaf)),
+    ("{0} *{1}" -f (Get-FileHash -LiteralPath $plainZip -Algorithm SHA256).Hash, (Split-Path $plainZip -Leaf))
+)
+Set-Content -LiteralPath $sum -Value $sumLines -Encoding ASCII
+
+# ---------- 4. Zip phat hanh chinh ----------
 $stage = Join-Path $dist '_stage'
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 Copy-Item -LiteralPath $bat -Destination $stage
 Copy-Item -LiteralPath $sum -Destination $stage
-foreach ($f in @('README.md', 'LICENSE', 'CHANGELOG.md')) {
+foreach ($f in $docs) {
     $p = Join-Path $root $f
     if (Test-Path -LiteralPath $p) { Copy-Item -LiteralPath $p -Destination $stage }
 }
@@ -63,10 +93,10 @@ $zip = Join-Path $dist ("SteamFix-{0}.zip" -f $Version)
 Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Force
 Remove-Item -LiteralPath $stage -Recurse -Force
 
-# ---------- 3. Bao cao ----------
+# ---------- 5. Bao cao ----------
 Write-Host ''
 Write-Host ("Build xong v{0}" -f $Version) -ForegroundColor Green
 Get-ChildItem -LiteralPath $dist -File | ForEach-Object {
-    Write-Host ("  {0,-26} {1,8:N0} bytes" -f $_.Name, $_.Length)
+    Write-Host ("  {0,-30} {1,8:N0} bytes" -f $_.Name, $_.Length)
 }
-Write-Host ("  SHA256: {0}" -f $hash)
+$sumLines | ForEach-Object { Write-Host ("  " + $_) }

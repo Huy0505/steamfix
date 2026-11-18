@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1
+
+- Thêm bản **`-plain.zip`**: `SteamFix.ps1` + `Run-SteamFix.bat` đọc trực tiếp, không base64 — dành cho người muốn đọc code trước khi chạy, cũng ít bị antivirus gắn cờ hơn.
+- Thêm `SECURITY.md` và mục "Có virus không? / Is it safe?" trong README (liệt kê đúng các lệnh tool chạy).
+- `build.ps1` tự ghi số phiên bản vào script; `SHA256.txt` gồm cả hash của bản plain.
+
 ## 2.0.0 — bản dùng chung cho nhiều người
 
 - Đóng gói **một file `.bat` duy nhất** (payload base64 tự giải nén ra `%TEMP%`, chạy xong tự xoá) → gửi qua chat/email là dùng được.

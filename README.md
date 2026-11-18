@@ -15,6 +15,15 @@ Công cụ một file, không cần cài đặt, dùng được cho nhiều máy
 
 Xong, Steam tự mở lại. Nếu vẫn lỗi: Steam → Settings → Downloads → đổi **Download Region**.
 
+## Có virus không? / Is it safe?
+
+Người dùng có lý do để nghi: file `.bat` không chữ ký, xin quyền Admin, đổi DNS. Chi tiết đầy đủ ở [`SECURITY.md`](SECURITY.md), tóm tắt:
+
+- **Không** gửi dữ liệu đi đâu, **không** tải code từ mạng, **không** cài service/driver/task, **không** đọc tài khoản Steam.
+- Chỉ chạy: tắt tiến trình Steam, đổi tên cache, `ipconfig /flushdns`, tắt proxy, đặt DNS `1.1.1.1/8.8.8.8` (lưu DNS cũ, hoàn tác bằng menu `3`), rồi mở lại Steam.
+- Bản một-file có payload base64 → AV có thể báo nhầm "downloader". Muốn đọc code trước khi chạy thì tải **`SteamFix-2.0.0-plain.zip`**: `.ps1` đọc được bằng Notepad, không base64.
+- Kiểm chứng: `-Mode check` (không đổi gì), đối chiếu `SHA256.txt`, hoặc tự build từ `src/`.
+
 ## Dành cho IT / chạy hàng loạt
 
 ```bat
