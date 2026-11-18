@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+- Thêm mục menu `4` / `-Mode ui`: sửa lỗi giao diện Steam (cửa sổ trắng, đơ, `steamwebhelper` không phản hồi, "Failed to load steamui.dll") bằng cách đổi tên `steamui.dll` để Steam tải lại (bản cũ giữ lại).
+- Áp dụng cho cả nhóm lỗi kết nối `-7`, `-101`, `-102`, `-105`, `-118`, `-53`, không chỉ riêng `-7`.
+- Thêm `-Preview`: chạy thử bất kỳ mode nào mà không thay đổi gì.
+- Thêm `ERRORS.md`: bảng tra các lỗi Steam hay gặp và nên chọn gì.
+- Số bước hiển thị tự tính theo mode (`1/7`, `1/6`…).
+
 ## 2.0.1
 
 - Thêm bản **`-plain.zip`**: `SteamFix.ps1` + `Run-SteamFix.bat` đọc trực tiếp, không base64 — dành cho người muốn đọc code trước khi chạy, cũng ít bị antivirus gắn cờ hơn.

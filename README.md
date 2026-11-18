@@ -4,12 +4,14 @@ Sửa lỗi Steam báo **"Mã lỗi: -7 — Không thể kết nối tới máy 
 
 ## Chạy
 
-1. Vào [Releases](https://github.com/Huy0505/steamfix/releases), tải `SteamFix-2.0.1.bat`.
+1. Vào [Releases](https://github.com/Huy0505/steamfix/releases), tải `SteamFix-2.1.0.bat`.
 2. Nhấp đúp. Windows hỏi quyền admin thì bấm **Yes** (cần quyền này để đổi DNS).
 3. SmartScreen có thể chặn vì file không ký số: **More info → Run anyway**.
 4. Hiện menu, bấm `1` rồi Enter. Xong Steam tự mở lại.
 
-Menu có thêm `2` để xem máy đang bị gì mà không thay đổi gì, và `3` để trả DNS về như cũ.
+Menu có thêm: `2` xem máy đang bị gì mà không thay đổi gì, `3` trả DNS về như cũ, `4` sửa lỗi giao diện (cửa sổ Steam trắng/đơ, `steamwebhelper` không phản hồi, `Failed to load steamui.dll`).
+
+Máy báo lỗi mã khác xem bảng tra ở [ERRORS.md](ERRORS.md).
 
 Vẫn lỗi thì vào Steam → Settings → Downloads, đổi Download Region (Singapore hoặc Hong Kong).
 
@@ -18,11 +20,13 @@ Vẫn lỗi thì vào Steam → Settings → Downloads, đổi Download Region (
 Dùng cho máy nhiều người hoặc script:
 
 ```bat
-SteamFix-2.0.1.bat -Mode check -NoPause                    :: chỉ kiểm tra
-SteamFix-2.0.1.bat -Mode fix -Unattended -NoPause          :: sửa luôn, không hỏi
-SteamFix-2.0.1.bat -Mode restore -Unattended -NoPause      :: trả DNS
-SteamFix-2.0.1.bat -Mode fix -Deep -Unattended -NoPause    :: thêm reset winsock, phải reboot
-SteamFix-2.0.1.bat -Lang en -Mode fix                      :: giao diện tiếng Anh
+SteamFix-2.1.0.bat -Mode check -NoPause                    :: chỉ kiểm tra
+SteamFix-2.1.0.bat -Mode fix -Unattended -NoPause          :: sửa luôn, không hỏi
+SteamFix-2.1.0.bat -Mode restore -Unattended -NoPause      :: trả DNS
+SteamFix-2.1.0.bat -Mode ui -NoPause                       :: sửa lỗi giao diện
+SteamFix-2.1.0.bat -Mode fix -Preview -NoPause             :: xem sẽ làm gì, không đổi gì
+SteamFix-2.1.0.bat -Mode fix -Deep -Unattended -NoPause    :: thêm reset winsock, phải reboot
+SteamFix-2.1.0.bat -Lang en -Mode fix                      :: giao diện tiếng Anh
 ```
 
 `-Unattended` bắt buộc phải có `-Mode`, thiếu là tool thoát luôn chứ không đoán bừa.
@@ -45,7 +49,7 @@ Log nằm trong `%LOCALAPPDATA%\SteamFix\logs`. Không ghi được vào đó th
 
 Chắc chắn là có người hỏi, nên mình ghi rõ trong [SECURITY.md](SECURITY.md): tool không gửi dữ liệu đi đâu, không tải code từ mạng, không cài service hay task, không đọc tài khoản Steam.
 
-Bản một-file có nhúng payload base64 nên antivirus hay gắn cờ "downloader". Muốn đọc code trước khi chạy thì tải `SteamFix-2.0.1-plain.zip`, trong đó là `.ps1` mở bằng Notepad được, không mã hoá.
+Bản một-file có nhúng payload base64 nên antivirus hay gắn cờ "downloader". Muốn đọc code trước khi chạy thì tải `SteamFix-2.1.0-plain.zip`, trong đó là `.ps1` mở bằng Notepad được, không mã hoá.
 
 Kiểm tra nhanh: chạy `-Mode check` (không đổi gì), hoặc so SHA256 trong `SHA256.txt`, hoặc tự build.
 
@@ -59,7 +63,7 @@ Kiểm tra nhanh: chạy `-Mode check` (không đổi gì), hoặc so SHA256 tro
 ## Build
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 2.0.2
+powershell -ExecutionPolicy Bypass -File .\build.ps1 -Version 2.1.1
 ```
 
 Ra `dist/` gồm `.bat` một file, bản plain, 2 file zip và `SHA256.txt`. Nguồn nằm ở `src/Fix-Steam.ps1`.

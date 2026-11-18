@@ -12,14 +12,15 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('fix', 'check', 'restore')][string]$Mode,
+    [ValidateSet('fix', 'check', 'restore', 'ui')][string]$Mode,
     [switch]$Unattended,
     [switch]$NoPause,
     [switch]$Deep,
+    [switch]$Preview,
     [ValidateSet('vi', 'en')][string]$Lang
 )
 
-$ScriptVersion = '2.0.0'
+$ScriptVersion = '2.1.0'
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
 
@@ -34,46 +35,53 @@ $S = @{
         opt1 = '1. Sua loi ngay (khuyen nghi)'
         opt2 = '2. Chi kiem tra, khong thay doi gi'
         opt3 = '3. Hoan tac - tra DNS ve nhu cu'
+        opt4 = '4. Sua loi giao dien Steam (trang, do, steamwebhelper khong phan hoi)'
         opt0 = '0. Thoat'
         choose = 'Nhap lua chon [1]: '
         invalid = 'Lua chon khong hop le.'
         consent = 'Tool se: tat Steam, lam moi cache, xoa cache DNS, doi DNS sang 1.1.1.1/8.8.8.8, mo lai Steam. Tiep tuc?'
+        consent_ui = 'Tool se: tat Steam, lam moi cache, dat lai steamui.dll de Steam tai lai giao dien. Tiep tuc?'
+        err_hint = 'Loi -7, -101, -102, -105, -118, 53 deu la "khong ket noi toi may chu" -> chon 1.'
         yesno = '[Y/n] '
         aborted = 'Da huy. Khong thay doi gi.'
         need_admin = 'Thao tac nay can quyen Admin. Hay chuot phai file .bat > Run as administrator.'
         uac_cancel = 'Ban da huy hop thoai UAC -> khong the doi DNS. Tiep tuc phan con lai?'
         limited = 'Chay o che do gioi han (khong doi DNS).'
-        step1 = '1/7 Kiem tra Internet va DNS'
+        step1 = 'Kiem tra Internet va DNS'
         net_ok = 'Co ket noi Internet'
         net_warn = 'Khong ping/TCP ra ngoai (co the do tuong lua chan ICMP)'
         dns_ok = 'DNS phan giai duoc api.steampowered.com'
         dns_bad = 'DNS khong phan giai duoc ten mien Steam -> se doi DNS'
         net_dead = 'Mat ket noi Internet that su - kiem tra Wi-Fi/cap mang/tram phat roi chay lai.'
-        step2 = '2/7 Tim thu muc Steam'
+        step2 = 'Tim thu muc Steam'
         steam_path = 'Steam: {0}'
         steam_missing = 'Khong tim thay Steam - bo qua phan cache va khoi dong lai.'
-        step3 = '3/7 Tat Steam dang chay'
+        step3 = 'Tat Steam dang chay'
         running_none = 'Steam khong chay'
         kill_ok = 'Da tat: {0}'
         kill_fail = 'Van con tien trinh: {0}'
-        step4 = '4/7 Lam moi cache HTML/app cua Steam'
+        step4 = 'Lam moi cache HTML/app cua Steam'
+        step_ui = 'Sua giao dien Steam'
+        ui_backup = 'Da doi ten steamui.dll -> {0}, Steam se tai lai khi mo'
+        ui_missing = 'Khong thay steamui.dll - bo qua buoc nay'
+        ui_done = 'Xong phan giao dien. Steam se tai lai giao dien, doi 1-2 phut.'
         cache_done = 'Da lam moi: {0} (ban cu giu lai duoi ten .old_*)'
         cache_fail = 'Khong lam moi duoc {0}: {1}'
-        step5 = '5/7 Xoa cache DNS va tat proxy'
+        step5 = 'Xoa cache DNS va tat proxy'
         flush_ok = 'Da xoa cache DNS'
         flush_fail = 'flushdns loi: {0}'
         proxy_off = 'Da tat proxy trong Internet Settings'
         proxy_already = 'Proxy Internet Settings dang tat san'
         winhttp_ok = 'Da reset proxy WinHTTP'
         winhttp_fail = 'Reset proxy WinHTTP that bai (khong nghiem trong)'
-        step6 = '6/7 Doi DNS sang 1.1.1.1 + 8.8.8.8'
+        step6 = 'Doi DNS sang 1.1.1.1 + 8.8.8.8'
         dns_set = 'Da dat DNS cho {0}: 1.1.1.1, 8.8.8.8'
         dns_fail = 'Dat DNS that bai: {0}'
         dns_skip = 'Bo qua doi DNS.'
         dns_noadmin = 'Khong co quyen Admin nen khong doi DNS duoc.'
         adapter_missing = 'Khong tim thay card mang dang hoat dong'
         dns_backup = 'DNS cu da luu de hoan tac: {0}'
-        step7 = '7/7 Kiem tra may chu Steam'
+        step7 = 'Kiem tra may chu Steam'
         srv_ok = '{0} ({1}:{2}) - thong'
         srv_bad = '{0} ({1}:{2}) - KHONG thong'
         srv_none = 'Khong ket noi duoc may chu Steam nao -> mang/ISP chan hoac Steam dang bao tri.'
@@ -94,6 +102,7 @@ $S = @{
         sim_close = 'Se tat: {0}'
         sim_cache = 'Se lam moi cache: {0}'
         sim_net = 'Se flush DNS va tat proxy'
+        sim_ui = 'Se doi ten steamui.dll de Steam tai lai giao dien'
         check_done = 'Kiem tra xong - khong thay doi gi tren may.'
     }
     en = @{
@@ -102,46 +111,53 @@ $S = @{
         opt1 = '1. Fix it now (recommended)'
         opt2 = '2. Only check, change nothing'
         opt3 = '3. Undo - restore previous DNS'
+        opt4 = '4. Fix Steam UI (blank window, frozen, steamwebhelper not responding)'
         opt0 = '0. Exit'
         choose = 'Choose [1]: '
         invalid = 'Invalid choice.'
         consent = 'This will: close Steam, reset its cache, flush DNS, set DNS to 1.1.1.1/8.8.8.8, restart Steam. Continue?'
+        consent_ui = 'This will: close Steam, reset its cache, rename steamui.dll so Steam re-downloads the UI. Continue?'
+        err_hint = 'Errors -7, -101, -102, -105, -118, 53 all mean "cannot connect to servers" -> pick 1.'
         yesno = '[Y/n] '
         aborted = 'Cancelled. Nothing changed.'
         need_admin = 'This action needs Administrator. Right-click the .bat > Run as administrator.'
         uac_cancel = 'UAC was cancelled -> cannot change DNS. Continue with the rest?'
         limited = 'Running in limited mode (no DNS change).'
-        step1 = '1/7 Checking Internet and DNS'
+        step1 = 'Checking Internet and DNS'
         net_ok = 'Internet connection available'
         net_warn = 'No ping/TCP out (ICMP may be blocked)'
         dns_ok = 'DNS resolves api.steampowered.com'
         dns_bad = 'DNS cannot resolve Steam domains -> will change DNS'
         net_dead = 'No Internet at all - check Wi-Fi/cable/router and run again.'
-        step2 = '2/7 Locating Steam'
+        step2 = 'Locating Steam'
         steam_path = 'Steam: {0}'
         steam_missing = 'Steam not found - skipping cache and relaunch.'
-        step3 = '3/7 Closing Steam'
+        step3 = 'Closing Steam'
         running_none = 'Steam is not running'
         kill_ok = 'Closed: {0}'
         kill_fail = 'Still running: {0}'
-        step4 = '4/7 Refreshing Steam HTML/app cache'
+        step4 = 'Refreshing Steam HTML/app cache'
+        step_ui = 'Fixing Steam UI'
+        ui_backup = 'Renamed steamui.dll -> {0}, Steam re-downloads it on start'
+        ui_missing = 'steamui.dll not found - skipping'
+        ui_done = 'UI step done. Steam will re-download its UI, give it 1-2 minutes.'
         cache_done = 'Refreshed: {0} (old copy kept as .old_*)'
         cache_fail = 'Could not refresh {0}: {1}'
-        step5 = '5/7 Flushing DNS and disabling proxy'
+        step5 = 'Flushing DNS and disabling proxy'
         flush_ok = 'DNS cache flushed'
         flush_fail = 'flushdns failed: {0}'
         proxy_off = 'Disabled proxy in Internet Settings'
         proxy_already = 'Proxy already disabled'
         winhttp_ok = 'WinHTTP proxy reset'
         winhttp_fail = 'WinHTTP proxy reset failed (not critical)'
-        step6 = '6/7 Setting DNS to 1.1.1.1 + 8.8.8.8'
+        step6 = 'Setting DNS to 1.1.1.1 + 8.8.8.8'
         dns_set = 'DNS set on {0}: 1.1.1.1, 8.8.8.8'
         dns_fail = 'Setting DNS failed: {0}'
         dns_skip = 'Skipping DNS change.'
         dns_noadmin = 'No Administrator rights, DNS left unchanged.'
         adapter_missing = 'No active network adapter found'
         dns_backup = 'Previous DNS saved for undo: {0}'
-        step7 = '7/7 Checking Steam servers'
+        step7 = 'Checking Steam servers'
         srv_ok = '{0} ({1}:{2}) - reachable'
         srv_bad = '{0} ({1}:{2}) - NOT reachable'
         srv_none = 'No Steam server reachable -> network/ISP block or Steam outage.'
@@ -162,6 +178,7 @@ $S = @{
         sim_close = 'Would close: {0}'
         sim_cache = 'Would refresh cache: {0}'
         sim_net = 'Would flush DNS and disable proxy'
+        sim_ui = 'Would rename steamui.dll so Steam re-downloads the UI'
         check_done = 'Check finished - nothing changed.'
     }
 }
@@ -201,13 +218,21 @@ $BackupFile = Join-Path $StateRoot 'dns-backup.json'
 
 $script:Issues = 0
 $script:Fixes = 0
+$script:StepNo = 0
+$script:StepTotal = 7
 
 function Log([string]$msg) {
     if (-not $script:LogReady) { return }
     try { Add-Content -LiteralPath $script:LogFile -Value ('[{0}] {1}' -f (Get-Date -Format 'HH:mm:ss'), $msg) -Encoding UTF8 -ErrorAction SilentlyContinue } catch { }
 }
 function Say([string]$m, [string]$color = 'Gray') { Write-Host $m -ForegroundColor $color; Log $m }
-function Step([string]$m) { Write-Host ''; Write-Host ("== " + $m) -ForegroundColor Cyan; Log ("== " + $m) }
+function Step([string]$m) {
+    $script:StepNo++
+    $head = ('{0}/{1} {2}' -f $script:StepNo, $script:StepTotal, $m)
+    Write-Host ''
+    Write-Host ("== " + $head) -ForegroundColor Cyan
+    Log ("== " + $head)
+}
 function Ok([string]$m) { Say ("   [OK] " + $m) 'Green' }
 function Warn([string]$m) { Say ("   [!]  " + $m) 'Yellow' }
 function Fail([string]$m) { Say ("   [X]  " + $m) 'Red'; $script:Issues++ }
@@ -299,19 +324,24 @@ if (-not $Mode) {
     Write-Host (T 'opt1')
     Write-Host (T 'opt2')
     Write-Host (T 'opt3')
+    Write-Host (T 'opt4')
     Write-Host (T 'opt0')
+    Write-Host (T 'err_hint') -ForegroundColor DarkGray
     $c = Read-Host (T 'choose')
     switch ($c.Trim()) {
         '' { $Mode = 'fix' }
         '1' { $Mode = 'fix' }
         '2' { $Mode = 'check' }
         '3' { $Mode = 'restore' }
+        '4' { $Mode = 'ui' }
         '0' { Write-Host (T 'aborted'); return }
         default { Warn (T 'invalid'); return }
     }
 }
 
-$dryRun = ($Mode -eq 'check')
+$dryRun = ($Mode -eq 'check') -or $Preview
+$fixUi = ($Mode -eq 'ui')
+if ($fixUi) { $script:StepTotal = 6 }
 $isAdmin = Get-IsAdmin
 
 if (-not $isAdmin -and -not $dryRun -and -not $Unattended) {
@@ -330,7 +360,8 @@ if (-not $isAdmin) { Info (T 'not_admin_note') }
 # ---- Xac nhan truoc khi thay doi ----
 if (-not $dryRun -and -not $Unattended) {
     Write-Host ''
-    Write-Host (T 'consent') -ForegroundColor Yellow
+    if ($fixUi) { Write-Host (T 'consent_ui') -ForegroundColor Yellow }
+    else { Write-Host (T 'consent') -ForegroundColor Yellow }
     $ans = Read-Host (T 'yesno')
     if ($ans -and $ans.Trim().ToLower().StartsWith('n')) { Write-Host (T 'aborted'); if (-not $NoPause) { Read-Host (T 'press_enter') | Out-Null }; return }
 }
@@ -437,7 +468,27 @@ else {
     }
 }
 
-# ============================ 5. DNS cache + proxy ============================
+# ============================ 5. Giao dien Steam (chi khi -Mode ui) ============================
+if ($fixUi) {
+    Step (T 'step_ui')
+    if (-not $steamPath) { Warn (T 'steam_missing') }
+    else {
+        $dll = Join-Path $steamPath 'steamui.dll'
+        if (-not (Test-Path -LiteralPath $dll)) { Warn (T 'ui_missing') }
+        elseif ($dryRun) { Info (T 'sim_ui') }
+        else {
+            try {
+                $bakName = 'steamui.dll.old_' + (Get-Date -Format 'yyyyMMdd_HHmmss')
+                Rename-Item -LiteralPath $dll -NewName $bakName -Force
+                Ok (T 'ui_backup' @($bakName)); $script:Fixes++
+                Ok (T 'ui_done')
+            } catch { Fail (T 'cache_fail' @('steamui.dll', $_.Exception.Message)) }
+        }
+    }
+}
+
+# ============================ 5b. DNS cache + proxy ============================
+if (-not $fixUi) {
 Step (T 'step5')
 if ($dryRun) { Info (T 'sim_net') }
 else {
@@ -489,6 +540,7 @@ else {
             Ok (T 'dns_set' @($alias)); $script:Fixes++
         } catch { Fail (T 'dns_fail' @($_.Exception.Message)) }
     }
+}
 }
 
 # ============================ 7. May chu Steam ============================

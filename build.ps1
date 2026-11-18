@@ -10,7 +10,7 @@ if (-not (Test-Path -LiteralPath $src)) { throw "Thieu file nguon: $src" }
 if (Test-Path $dist) { Remove-Item -LiteralPath $dist -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
 
-$docs = @('README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md')
+$docs = @('README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md', 'ERRORS.md')
 
 $code  = Get-Content -LiteralPath $src -Raw -Encoding UTF8
 # Ghi de so phien ban trong script bang -Version de ban phat hanh tu bao dung version.
